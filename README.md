@@ -1,7 +1,7 @@
 # JadeGate
 
 A lightweight web proxy. Every site you open goes through the JadeGate server. Links, forms, popups
-and `target="_blank"` are rewritten so you always stay in one tab. Search uses Brave Search.
+and `target="_blank"` are rewritten so you always stay in one tab. Search uses DuckDuckGo.
 
 ## Accounts and messenger
 
@@ -36,7 +36,7 @@ To open a hosted copy in Brave: `start-jadegate.bat https://jadegate.yourdomain.
 |---------------------|-----------------------------------------|-----------------------------------------------|
 | `PORT`              | `8080`                                  | Port the server listens on (hosts set this).  |
 | `JADEGATE_PASSWORD` | (none)                                  | If set, visitors must enter it before use.    |
-| `JADEGATE_SEARCH`   | `https://search.brave.com/search?q=`    | Search engine; the query is appended.         |
+| `JADEGATE_SEARCH`   | `https://html.duckduckgo.com/html/?q=` | Search engine; the query is appended.         |
 
 Set `JADEGATE_PASSWORD` whenever you host JadeGate publicly. Otherwise anyone can use your proxy
 and the host may suspend your account.
@@ -59,4 +59,4 @@ and the host may suspend your account.
 - Very heavy, script-driven sites (YouTube, Discord, Google sign-in) may only partly work.
   WebSockets and `location.assign()` to external URLs are not proxied.
 - Search engines sometimes block requests that come from servers (HTTP 429 or a captcha).
-  If Brave blocks you, set `JADEGATE_SEARCH` to another engine.
+  If a search engine blocks you, set `JADEGATE_SEARCH` to another engine.

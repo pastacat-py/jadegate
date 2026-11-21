@@ -25,7 +25,17 @@ if (http.maxHeaderSize < 262144 && !process.env.JADEGATE_CHILD) {
 const PORT = process.env.PORT || 8080;
 // Password for the grey cover screen. Kept out of the code (the repo is public): set JADEGATE_PASSWORD.
 const PASSWORD = process.env.JADEGATE_PASSWORD || crypto.randomBytes(6).toString('hex');
-const SEARCH = process.env.JADEGATE_SEARCH || 'https://search.brave.com/search?q=';
+// Search engines, tried in order. Engines sometimes refuse requests from servers (HTTP 202/403/429);
+// when that happens JadeGate retries the same search on the next one.
+const ENGINES = ['https://html.duckduckgo.com/html/', 'https://www.bing.com/search', 'https://lite.duckduckgo.com/lite/'];
+const SEARCH = process.env.JADEGATE_SEARCH || ENGINES[0] + '?q=';
+
+function nextEngine(target) {
+  const i = ENGINES.findIndex((e) => target.href.startsWith(e));
+  const q = target.searchParams.get('q');
+  if (i < 0 || i === ENGINES.length - 1 || !q) return null;
+  return ENGINES[i + 1] + '?q=' + encodeURIComponent(q);
+}
 const AUTH_TOKEN = crypto.createHash('sha256').update('jg:' + PASSWORD).digest('hex');
 
 const PUBLIC = path.join(__dirname, 'public');
@@ -272,6 +282,16 @@ async function proxy(req, res, target) {
   }
 
   const out = {};
+  // Search engine refused us? Retry the same search on the next engine.
+  if (req.method === 'GET' && [202, 403, 429].includes(upstream.status)) {
+    const next = nextEngine(target);
+    if (next) {
+      upstream.body?.cancel().catch(() => {});
+      res.writeHead(302, { location: px(next) });
+      return res.end();
+    }
+  }
+
   upstream.headers.forEach((v, k) => { if (!DROP_RES.has(k)) out[k] = v; });
   out['referrer-policy'] = 'same-origin'; // lets JadeGate see which page requested a file
   const loc = upstream.headers.get('location');
