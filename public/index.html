@@ -145,10 +145,10 @@
 </style>
 </head>
 <body>
-  <!-- Plain grey cover. Press Ctrl alone to show the password box; Ctrl again (once unlocked) brings it back. -->
+  <!-- Grey cover with a password box. Once unlocked, pressing Ctrl alone brings the cover back. -->
   <div id="cover">
-    <form id="unlock" autocomplete="off" hidden>
-      <input id="pw" type="password" placeholder="Password" aria-label="Password">
+    <form id="unlock" autocomplete="off">
+      <input id="pw" type="password" placeholder="Password" aria-label="Password" autofocus>
     </form>
   </div>
 
@@ -307,21 +307,21 @@
 
   function coverUp() {
     cover.hidden = false;
-    unlockForm.hidden = true;
     pw.value = '';
     $('menu').hidden = true;
     if ($('acctDlg').open) $('acctDlg').close();
     try { view.contentDocument.querySelectorAll('video, audio').forEach((m) => m.pause()); } catch {}
     if (document.activeElement) document.activeElement.blur(); // pull keyboard focus out of the site
     window.focus();
+    pw.focus();
   }
 
+  // Ctrl alone: cover JadeGate. (While covered, it just puts the cursor back in the password box.)
   function toggleCover() {
     if (!isCovered()) return coverUp();
-    unlockForm.hidden = !unlockForm.hidden;
-    pw.value = '';
-    if (!unlockForm.hidden) pw.focus();
+    pw.focus();
   }
+  pw.focus();
 
   unlockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -331,7 +331,7 @@
     pw.value = '';
     if (r && r.ok) {
       cover.hidden = true;
-      unlockForm.hidden = true;
+      pw.blur();
       if (!started) { started = true; startBrowsing(); loadState().catch(() => signedOut()); }
     } else {
       unlockForm.classList.remove('bad');
