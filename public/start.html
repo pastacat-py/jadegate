@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JadeGate</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='5' fill='%23b23a26'/><rect x='5' y='5' width='22' height='22' rx='3' fill='none' stroke='%23f3e7cc' stroke-width='1.5'/><path d='M10 10h12M10 16h12M10 22h12M16 10v12' stroke='%23f3e7cc' stroke-width='2.2' stroke-linecap='round'/><circle cx='20.5' cy='19' r='1.3' fill='%23f3e7cc'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment:#f3e7cc; --parchment-2:#e8d6ae; --parchment-3:#dcc596; --ink:#2b1d14; --muted:#7a6248;
+    --gold:#c8963e; --gold-bright:#e3b85e; --lapis:#1e3a66; --vermilion:#b23a26; --jade:#3f8f74; --sand:#c9a96e;
+    --display:"Cinzel", "Trajan Pro", Georgia, serif; --body:"EB Garamond", Garamond, Georgia, serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+         padding:32px 16px 40px; color:var(--ink); font-family:var(--body);
+         background:
+           radial-gradient(ellipse at 50% 35%, rgba(255,250,235,.85) 0%, rgba(255,250,235,0) 60%),
+           radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120,80,30,.28) 100%),
+           repeating-linear-gradient(17deg, rgba(150,110,50,.035) 0 2px, transparent 2px 7px),
+           var(--parchment); }
+
+  .crest { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:22px; text-align:center; }
+  .crest svg { width:62px; height:62px; filter:drop-shadow(0 2px 3px rgba(80,40,10,.3)); }
+  h1 { margin:6px 0 0; font:700 clamp(38px, 7vw, 58px)/1 var(--display); letter-spacing:5px; color:var(--ink); }
+  .motto { margin:0; font:italic 19px var(--body); color:var(--muted); }
+  .rule { display:flex; align-items:center; gap:12px; width:min(360px, 80vw); margin:6px 0 0; color:var(--gold); }
+  .rule::before, .rule::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  form { width:100%; max-width:620px; display:flex; gap:8px; padding:7px; border-radius:14px;
+         background:#fbf4e2; border:2px solid var(--gold); box-shadow:0 0 0 4px var(--parchment), 0 0 0 5px var(--parchment-3), 0 12px 30px rgba(90,55,15,.18); }
+  input { flex:1; min-width:0; background:transparent; border:0; outline:0; color:var(--ink); font:19px var(--body); padding:9px 12px; }
+  input::placeholder { color:var(--muted); font-style:italic; }
+  button { border:0; border-radius:9px; padding:0 22px; background:var(--vermilion); color:var(--parchment);
+           font:700 14px var(--display); letter-spacing:1.5px; cursor:pointer; }
+  button:hover { filter:brightness(1.1); }
+
+  .quick { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:24px; max-width:620px; }
+  .quick a { display:flex; align-items:center; gap:8px; padding:8px 14px 8px 8px; border-radius:999px; text-decoration:none;
+             color:var(--ink); font-size:17px; background:rgba(251,244,226,.7); border:1px solid var(--parchment-3); }
+  .quick a:hover { border-color:var(--gold); background:#fbf4e2; }
+  .quick i { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font:700 11px var(--display);
+             font-style:normal; color:var(--parchment); background:var(--vermilion); }
+  .quick a:nth-child(2) i { background:var(--lapis); }
+  .quick a:nth-child(3) i { background:var(--jade); }
+  .quick a:nth-child(4) i { background:var(--muted); }
+
+  .route { width:100%; max-width:920px; margin-top:34px; }
+  .route svg { width:100%; height:auto; display:block; overflow:visible; }
+  .route .city { font:600 13px var(--display); letter-spacing:1px; fill:var(--ink); }
+  .route .gate { fill:var(--vermilion); font-weight:700; }
+  .route .note { font:italic 12.5px var(--body); fill:var(--muted); }
+
+  .err { color:var(--vermilion); font-size:16px; margin-top:12px; }
+  [hidden] { display:none !important; }
+  @media (max-width:560px) { .route .note { display:none; } }
+</style>
+</head>
+<body>
+  <div class="crest">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="5" fill="#b23a26"/><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#f3e7cc" stroke-width="1.5"/><path d="M10 10h12M10 16h12M10 22h12M16 10v12" stroke="#f3e7cc" stroke-width="2.2" stroke-linecap="round"/><circle cx="20.5" cy="19" r="1.3" fill="#f3e7cc"/></svg>
+    <h1>JADEGATE</h1>
+    <div class="rule">✦</div>
+    <p class="motto">Every road west begins at the Jade Gate</p>
+  </div>
+
+  <!-- Normal search form -->
+  <form id="search" action="/go" method="get" autocomplete="off">
+    <input name="q" placeholder="Search with Brave or enter an address" autofocus>
+    <button type="submit">Go</button>
+  </form>
+
+  <div class="quick" id="quick">
+    <a href="/go?q=https://search.brave.com"><i>B</i>Brave Search</a>
+    <a href="/go?q=https://en.wikipedia.org/wiki/Silk_Road"><i>W</i>Wikipedia</a>
+    <a href="/go?q=https://news.ycombinator.com"><i>Y</i>Hacker News</a>
+    <a href="/go?q=https://github.com"><i>G</i>GitHub</a>
+  </div>
+
+  <!-- Map of the caravan route, west (left) to east (right) -->
+  <div class="route" id="route" aria-hidden="true">
+    <svg viewBox="0 0 1000 230">
+      <!-- mountains: Pamirs & Tian Shan -->
+      <g fill="none" stroke="#a98b5c" stroke-width="1.6" stroke-linejoin="round" opacity=".75">
+        <path d="M478 112l14-22 12 16 10-14 16 20"/><path d="M500 186l12-18 10 12 9-11 14 17"/>
+        <path d="M600 74l13-20 11 14 12-16 15 22"/><path d="M660 70l10-14 9 11 11-13 13 16"/>
+      </g>
+      <!-- dunes: Taklamakan & Karakum -->
+      <g fill="none" stroke="#c9a96e" stroke-width="1.5" stroke-linecap="round" opacity=".85">
+        <path d="M600 150q14-10 28 0t28 0t28 0"/><path d="M618 166q14-10 28 0t28 0"/>
+        <path d="M262 186q12-9 24 0t24 0"/><path d="M276 200q12-9 24 0t24 0"/>
+      </g>
+      <!-- the route -->
+      <path d="M62 128 C 120 150, 160 175, 205 168 S 290 120, 335 118 S 410 96, 445 100 S 520 138, 565 134 S 660 112, 720 96 S 840 120, 915 128"
+            fill="none" stroke="#b23a26" stroke-width="2.2" stroke-dasharray="7 6" stroke-linecap="round"/>
+      <!-- cities -->
+      <g>
+        <circle cx="62" cy="128" r="6" fill="#1e3a66"/><text class="city" x="62" y="104" text-anchor="middle">Constantinople</text>
+        <circle cx="205" cy="168" r="6" fill="#1e3a66"/><text class="city" x="205" y="194" text-anchor="middle">Baghdad</text>
+        <circle cx="335" cy="118" r="6" fill="#1e3a66"/><text class="city" x="335" y="96" text-anchor="middle">Merv</text>
+        <circle cx="445" cy="100" r="6" fill="#1e3a66"/><text class="city" x="445" y="78" text-anchor="middle">Samarkand</text>
+        <circle cx="565" cy="134" r="6" fill="#1e3a66"/><text class="city" x="565" y="160" text-anchor="middle">Kashgar</text>
+        <g transform="translate(720 96)">
+          <circle r="13" fill="none" stroke="#c8963e" stroke-width="1.5"/><rect x="-7" y="-7" width="14" height="14" rx="2" fill="#b23a26"/>
+        </g>
+        <text class="city gate" x="720" y="72" text-anchor="middle">Jade Gate</text>
+        <text class="note" x="720" y="128" text-anchor="middle">Yumen Pass · 玉門關</text>
+        <circle cx="915" cy="128" r="6" fill="#1e3a66"/><text class="city" x="915" y="104" text-anchor="middle">Chang'an</text>
+      </g>
+      <!-- compass -->
+      <g transform="translate(965 40)" fill="#7a6248">
+        <path d="M0-20l4 16-4 4-4-4z"/><path d="M0 20l4-16-4-4-4 4z" opacity=".45"/>
+        <text x="0" y="-25" text-anchor="middle" font-family="Cinzel, serif" font-size="11">N</text>
+      </g>
+      <text class="note" x="62" y="222">West</text><text class="note" x="915" y="222" text-anchor="end">East</text>
+    </svg>
+  </div>
+
+  <script>
+    // Ctrl pressed on its own here: tell JadeGate to toggle its grey cover.
+    let ctrlAlone = false;
+    addEventListener('keydown', (e) => { if (e.key === 'Control') { if (!e.repeat) ctrlAlone = true; } else ctrlAlone = false; }, true);
+    addEventListener('keyup', (e) => {
+      if (e.key === 'Control' && ctrlAlone) { ctrlAlone = false; window.parent.postMessage({ jadegate: 'ctrl' }, location.origin); }
+    }, true);
+    addEventListener('mousedown', () => { ctrlAlone = false; }, true);
+  </script>
+</body>
+</html>

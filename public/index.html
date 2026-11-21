@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JadeGate</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='5' fill='%23b23a26'/><rect x='5' y='5' width='22' height='22' rx='3' fill='none' stroke='%23f3e7cc' stroke-width='1.5'/><path d='M10 10h12M10 16h12M10 22h12M16 10v12' stroke='%23f3e7cc' stroke-width='2.2' stroke-linecap='round'/><circle cx='20.5' cy='19' r='1.3' fill='%23f3e7cc'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --walnut:#24170f; --leather:#3a2618; --leather-2:#4a3020; --parchment:#f3e7cc; --parchment-2:#e8d6ae;
+    --parchment-3:#dcc596; --ink:#2b1d14; --muted:#7a6248; --gold:#c8963e; --gold-bright:#e3b85e;
+    --lapis:#1e3a66; --vermilion:#b23a26; --jade:#3f8f74;
+    --display:"Cinzel", "Trajan Pro", Georgia, serif; --body:"EB Garamond", Garamond, Georgia, serif;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--walnut); color:var(--ink); font-family:var(--body); }
+  body { display:flex; flex-direction:column; }
+  button { font:inherit; }
+
+  /* ---------- toolbar ---------- */
+  .bar { position:relative; display:flex; align-items:center; gap:4px; padding:8px 10px 12px;
+         background:linear-gradient(180deg, var(--leather-2), var(--leather)); color:var(--parchment); flex:none; z-index:3; }
+  /* woven textile band along the bottom of the bar */
+  .bar::after { content:""; position:absolute; left:0; right:0; bottom:0; height:5px;
+    background:repeating-linear-gradient(90deg, var(--gold) 0 10px, var(--vermilion) 10px 14px, var(--lapis) 14px 24px, var(--vermilion) 24px 28px); opacity:.9; }
+  .brand { display:flex; align-items:center; gap:8px; margin-right:6px; white-space:nowrap; }
+  .seal { width:26px; height:26px; flex:none; }
+  .brand b { font-family:var(--display); font-weight:700; font-size:17px; letter-spacing:1.5px; color:var(--gold-bright); }
+  .btn { height:34px; min-width:34px; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 8px;
+         border:0; border-radius:8px; background:transparent; color:var(--parchment-2); cursor:pointer; flex:none; position:relative; }
+  .btn:hover { background:rgba(227,184,94,.14); color:var(--gold-bright); }
+  .btn svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .btn .label { font-family:var(--display); font-size:12.5px; letter-spacing:.8px; }
+  form#nav { flex:1; min-width:0; display:flex; margin:0 4px; }
+  #addr { flex:1; min-width:0; height:34px; padding:0 16px; border-radius:999px; border:1px solid var(--gold);
+          background:var(--parchment); color:var(--ink); font:17px var(--body); outline:0; box-shadow:inset 0 1px 3px rgba(60,35,10,.25); }
+  #addr:focus { border-color:var(--gold-bright); box-shadow:inset 0 1px 3px rgba(60,35,10,.25), 0 0 0 3px rgba(227,184,94,.3); }
+  #addr::placeholder { color:var(--muted); font-style:italic; }
+  .badge { position:absolute; top:2px; right:0; min-width:17px; height:17px; padding:0 4px; border-radius:999px;
+           background:var(--vermilion); color:#fff; font:600 11px/17px system-ui,sans-serif; text-align:center; }
+  .progress { position:absolute; left:0; bottom:5px; height:2px; width:0; background:var(--gold-bright); opacity:0;
+              transition:width 8s cubic-bezier(.1,.7,.2,1), opacity .3s; }
+  .progress.on { width:85%; opacity:1; }
+  .progress.done { width:100%; opacity:0; transition:width .2s, opacity .4s .2s; }
+
+  /* ---------- main area ---------- */
+  main { position:relative; flex:1; display:flex; min-height:0; }
+  iframe { flex:1; width:100%; border:0; background:var(--parchment); }
+
+  /* ---------- messenger panel ---------- */
+  .panel { position:absolute; top:0; right:0; bottom:0; width:min(380px, 100%); display:flex; flex-direction:column;
+           background:var(--parchment); border-left:3px double var(--gold); box-shadow:-8px 0 30px rgba(36,23,15,.35);
+           transform:translateX(105%); transition:transform .25s ease; z-index:2; }
+  body.chat-open .panel { transform:none; }
+  .panel header { display:flex; align-items:center; gap:8px; padding:12px 12px 10px 16px;
+                  background:linear-gradient(180deg, var(--parchment-2), var(--parchment)); border-bottom:1px solid var(--parchment-3); }
+  .panel h2 { margin:0; flex:1; font:700 17px var(--display); letter-spacing:1.2px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .panel h2 small { display:block; font:italic 400 13.5px var(--body); letter-spacing:0; color:var(--muted); }
+  .icon-btn { width:32px; height:32px; display:grid; place-items:center; border:0; border-radius:8px; background:transparent;
+              color:var(--ink); cursor:pointer; flex:none; }
+  .icon-btn:hover { background:var(--parchment-2); }
+  .icon-btn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .scroll { flex:1; overflow-y:auto; padding:10px 12px 16px; }
+  .section { margin:14px 4px 6px; font:700 11.5px var(--display); letter-spacing:1.6px; color:var(--muted); text-transform:uppercase; }
+  .filter { width:100%; height:36px; padding:0 12px; border:1px solid var(--parchment-3); border-radius:8px;
+            background:#fbf4e2; color:var(--ink); font:16px var(--body); outline:0; }
+  .filter:focus { border-color:var(--gold); }
+  .row { width:100%; display:flex; align-items:center; gap:10px; padding:9px 10px; border:0; border-radius:10px;
+         background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
+  .row:hover { background:var(--parchment-2); }
+  .avatar { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; flex:none; position:relative;
+            font:700 14px var(--display); color:var(--parchment); background:var(--lapis); }
+  .avatar.room { background:var(--vermilion); }
+  .dot { position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:50%;
+         background:var(--jade); border:2px solid var(--parchment); }
+  .row .text { flex:1; min-width:0; }
+  .row .name { font-weight:600; font-size:16.5px; }
+  .row .sub { font-size:14px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .count { min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--vermilion); color:#fff;
+                font:600 11.5px/20px system-ui,sans-serif; text-align:center; }
+  .empty { padding:10px 6px; color:var(--muted); font-style:italic; font-size:15px; }
+
+  .msgs { flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:82%; align-self:flex-start; }
+  .msg.mine { align-self:flex-end; }
+  .msg .who { font:600 12.5px var(--display); letter-spacing:.6px; color:var(--lapis); margin:0 0 2px 4px; }
+  .bubble { padding:8px 12px; border-radius:14px 14px 14px 4px; background:#fbf4e2; border:1px solid var(--parchment-3);
+            font-size:16.5px; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .mine .bubble { border-radius:14px 14px 4px 14px; background:var(--lapis); color:var(--parchment); border-color:var(--lapis); }
+  .msg time { display:block; font-size:12px; color:var(--muted); margin:2px 6px 0; }
+  .mine time { text-align:right; }
+  .composer { display:flex; gap:8px; padding:10px 12px 12px; border-top:1px solid var(--parchment-3); background:var(--parchment-2); }
+  .composer textarea { flex:1; min-height:40px; max-height:120px; resize:none; padding:9px 12px; border-radius:10px;
+                       border:1px solid var(--parchment-3); background:#fbf4e2; color:var(--ink); font:16.5px var(--body); outline:0; }
+  .composer textarea:focus { border-color:var(--gold); }
+  .primary { border:0; border-radius:10px; padding:0 16px; min-height:40px; background:var(--vermilion); color:var(--parchment);
+             font:700 13px var(--display); letter-spacing:1px; cursor:pointer; }
+  .primary:hover { filter:brightness(1.1); }
+  .primary:disabled { opacity:.6; cursor:default; }
+  .signin-cta { margin:30px 16px; text-align:center; color:var(--muted); font-size:16.5px; }
+  .signin-cta .primary { margin-top:12px; }
+
+  /* ---------- account dialog + menu ---------- */
+  dialog { width:min(400px, calc(100% - 32px)); padding:0; border:3px double var(--gold); border-radius:14px;
+           background:var(--parchment); color:var(--ink); box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  dialog::backdrop { background:rgba(36,23,15,.6); }
+  .dlg { padding:22px 24px 20px; }
+  .dlg h3 { margin:0 0 4px; font:700 20px var(--display); letter-spacing:1.4px; text-align:center; }
+  .dlg .lede { margin:0 0 16px; text-align:center; color:var(--muted); font-style:italic; }
+  .tabs { display:flex; gap:4px; padding:4px; margin-bottom:14px; border-radius:10px; background:var(--parchment-2); }
+  .tabs button { flex:1; height:34px; border:0; border-radius:8px; background:transparent; color:var(--muted);
+                 font:700 12.5px var(--display); letter-spacing:1px; cursor:pointer; }
+  .tabs button.on { background:var(--parchment); color:var(--ink); box-shadow:0 1px 3px rgba(60,35,10,.2); }
+  .dlg label { display:block; margin:10px 0 4px; font:600 12px var(--display); letter-spacing:1px; color:var(--muted); }
+  .dlg input { width:100%; height:40px; padding:0 12px; border:1px solid var(--parchment-3); border-radius:8px;
+               background:#fbf4e2; color:var(--ink); font:17px var(--body); outline:0; }
+  .dlg input:focus { border-color:var(--gold); }
+  .dlg .primary { width:100%; margin-top:16px; }
+  .dlg .err { min-height:20px; margin-top:8px; color:var(--vermilion); font-size:15px; text-align:center; }
+  .privacy { margin:10px 0 0; padding:10px 12px; border-radius:8px; background:var(--parchment-2); color:var(--muted);
+             font-size:14px; line-height:1.4; }
+  .close-x { position:absolute; top:8px; right:8px; }
+
+  .menu { position:absolute; top:52px; right:10px; min-width:200px; padding:6px; border-radius:10px; z-index:5;
+          background:var(--parchment); border:1px solid var(--gold); box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .menu .who { padding:8px 10px 6px; font:700 14px var(--display); letter-spacing:.8px; border-bottom:1px solid var(--parchment-3); margin-bottom:4px; }
+  .menu button { width:100%; padding:9px 10px; border:0; border-radius:8px; background:transparent; color:var(--ink);
+                 text-align:left; font-size:16px; cursor:pointer; }
+  .menu button:hover { background:var(--parchment-2); }
+  .menu button.danger { color:var(--vermilion); }
+
+  /* ---------- grey cover screen ---------- */
+  #cover { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; background:#808080; }
+  #unlock input { width:220px; height:34px; padding:0 12px; border:1px solid #707070; border-radius:6px;
+                  background:#8a8a8a; color:#1e1e1e; font:15px system-ui, sans-serif; outline:0; }
+  #unlock input::placeholder { color:#555; }
+  #unlock.bad { animation:shake .3s; }
+  @keyframes shake { 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
+
+  [hidden] { display:none !important; }
+  @media (max-width:640px) { .brand b, .btn .label { display:none; } #fwd { display:none; } }
+</style>
+</head>
+<body>
+  <!-- Plain grey cover. Press Ctrl alone to show the password box; Ctrl again (once unlocked) brings it back. -->
+  <div id="cover">
+    <form id="unlock" autocomplete="off" hidden>
+      <input id="pw" type="password" placeholder="Password" aria-label="Password">
+    </form>
+  </div>
+
+  <div class="bar">
+    <div class="brand">
+      <svg class="seal" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="5" fill="#b23a26"/><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#f3e7cc" stroke-width="1.5"/><path d="M10 10h12M10 16h12M10 22h12M16 10v12" stroke="#f3e7cc" stroke-width="2.2" stroke-linecap="round"/><circle cx="20.5" cy="19" r="1.3" fill="#f3e7cc"/></svg>
+      <b>JADEGATE</b>
+    </div>
+    <button class="btn" id="back" title="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="btn" id="fwd" title="Forward"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+    <button class="btn" id="reload" title="Reload"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>
+    <button class="btn" id="home" title="Home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></button>
+    <form id="nav" autocomplete="off">
+      <input id="addr" placeholder="Search with Brave or enter an address" spellcheck="false">
+    </form>
+    <button class="btn" id="chatBtn" title="Caravanserai messenger">
+      <svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></svg>
+      <span class="label">Messages</span><span class="badge" id="unread" hidden></span>
+    </button>
+    <button class="btn" id="acctBtn" title="Account">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+      <span class="label" id="acctLabel">Sign in</span>
+    </button>
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="menu" id="menu" hidden>
+    <div class="who" id="menuWho"></div>
+    <button id="signOut">Sign out</button>
+    <button id="deleteAcct" class="danger">Delete account</button>
+  </div>
+
+  <main>
+    <!-- No allow-top-navigation / allow-popups: sites can't leave this page or open new tabs. -->
+    <iframe id="view" name="jadegate-view"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock allow-presentation allow-orientation-lock"
+      allow="fullscreen; clipboard-write; autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen referrerpolicy="same-origin"></iframe>
+
+    <aside class="panel" id="panel" aria-label="Messenger">
+      <header>
+        <button class="icon-btn" id="chatBack" title="All conversations" hidden><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <h2 id="chatTitle">Caravanserai<small>Rest, trade word with fellow travelers</small></h2>
+        <button class="icon-btn" id="chatClose" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </header>
+
+      <div class="signin-cta" id="chatSignedOut">
+        Sign the ledger to send messages to other travelers.<br>
+        <button class="primary" id="chatSignIn">Sign in</button>
+      </div>
+
+      <div class="scroll" id="listView" hidden>
+        <input class="filter" id="filter" placeholder="Find a traveler by name" autocomplete="off">
+        <div class="section">Conversations</div>
+        <div id="convos"></div>
+        <div class="section">Travelers</div>
+        <div id="travelers"></div>
+      </div>
+
+      <div id="chatView" hidden style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <div class="msgs" id="msgs"></div>
+        <form class="composer" id="composer">
+          <textarea id="text" rows="1" placeholder="Write a message…" maxlength="1000"></textarea>
+          <button class="primary" type="submit">Send</button>
+        </form>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="acctDlg">
+    <form class="dlg" id="acctForm" method="dialog" autocomplete="off">
+      <button type="button" class="icon-btn close-x" id="dlgClose" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h3>The Ledger</h3>
+      <p class="lede">Enter the gate as a traveler</p>
+      <div class="tabs">
+        <button type="button" data-mode="login" class="on">Sign in</button>
+        <button type="button" data-mode="register">Create account</button>
+      </div>
+      <label for="u">Username</label>
+      <input id="u" name="username" maxlength="20" autocapitalize="off" spellcheck="false" required>
+      <label for="p">Password</label>
+      <input id="p" name="password" type="password" maxlength="200" required>
+      <button class="primary" type="submit" id="dlgSubmit">Sign in</button>
+      <div class="err" id="dlgErr"></div>
+      <p class="privacy">Nothing is saved. Accounts and messages live only in the server's memory: never written to disk, never logged. Everything vanishes when the server restarts, and messages fade after 24 hours.</p>
+    </form>
+  </dialog>
+
+<script>
+  // If this page somehow ends up inside its own frame, show the start page instead of a nested shell.
+  if (window.top !== window) location.replace('/jadegate/start');
+  window.__JG_SHELL = true;
+  const $ = (id) => document.getElementById(id);
+
+  /* =================== browser =================== */
+  const view = $('view'), addr = $('addr'), progress = $('progress');
+  const START = '/jadegate/start';
+  const store = {
+    get() { try { return sessionStorage.getItem('jg_url'); } catch { return null; } },
+    set(v) { try { v ? sessionStorage.setItem('jg_url', v) : sessionStorage.removeItem('jg_url'); } catch {} },
+  };
+
+  function go(q) {
+    q = (q || '').trim();
+    view.src = q ? '/go?q=' + encodeURIComponent(q) : START;
+    loading(true);
+  }
+  function loading(on) {
+    progress.classList.remove('on', 'done');
+    void progress.offsetWidth;
+    progress.classList.add(on ? 'on' : 'done');
+  }
+  function show(url) {
+    if (document.activeElement !== addr) addr.value = url || '';
+    store.set(url || '');
+  }
+  function realUrl() {
+    try {
+      const l = view.contentWindow.location, p = l.pathname;
+      if (p.startsWith('/p/')) {
+        const i = p.indexOf('/', 3);
+        const origin = decodeURIComponent(i < 0 ? p.slice(3) : p.slice(3, i));
+        return new URL(origin + (i < 0 ? '/' : p.slice(i)) + l.search + l.hash).href;
+      }
+      return p === START ? '' : null;
+    } catch { return null; }
+  }
+
+  view.addEventListener('load', () => { loading(false); const u = realUrl(); if (u !== null) show(u); });
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || !e.data || e.data.jadegate == null) return;
+    if (e.data.jadegate === 'nav') show(e.data.url);
+    if (e.data.jadegate === 'loading') loading(true);
+    if (e.data.jadegate === 'ctrl') toggleCover(); // Ctrl pressed while a site had focus
+  });
+  $('nav').addEventListener('submit', (e) => { e.preventDefault(); go(addr.value); addr.blur(); });
+  addr.addEventListener('focus', () => addr.select());
+  $('back').onclick = () => { try { view.contentWindow.history.back(); } catch { history.back(); } };
+  $('fwd').onclick = () => { try { view.contentWindow.history.forward(); } catch { history.forward(); } };
+  $('reload').onclick = () => { try { view.contentWindow.location.reload(); } catch { view.src = view.src; } loading(true); };
+  $('home').onclick = () => { store.set(''); go(''); };
+
+  // Nothing loads until the cover is unlocked the first time.
+  const params = new URLSearchParams(location.search);
+  const first = params.get('url') || store.get();
+  if (location.search) history.replaceState(null, '', '/');
+  function startBrowsing() {
+    go(first || '');
+    if (first) addr.value = first;
+  }
+
+  /* =================== grey cover screen =================== */
+  const cover = $('cover'), unlockForm = $('unlock'), pw = $('pw');
+  let started = false;
+  const isCovered = () => !cover.hidden;
+
+  function coverUp() {
+    cover.hidden = false;
+    unlockForm.hidden = true;
+    pw.value = '';
+    $('menu').hidden = true;
+    if ($('acctDlg').open) $('acctDlg').close();
+    try { view.contentDocument.querySelectorAll('video, audio').forEach((m) => m.pause()); } catch {}
+    if (document.activeElement) document.activeElement.blur(); // pull keyboard focus out of the site
+    window.focus();
+  }
+
+  function toggleCover() {
+    if (!isCovered()) return coverUp();
+    unlockForm.hidden = !unlockForm.hidden;
+    pw.value = '';
+    if (!unlockForm.hidden) pw.focus();
+  }
+
+  unlockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/jadegate/unlock', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: pw.value }),
+    }).catch(() => null);
+    pw.value = '';
+    if (r && r.ok) {
+      cover.hidden = true;
+      unlockForm.hidden = true;
+      if (!started) { started = true; startBrowsing(); loadState().catch(() => signedOut()); }
+    } else {
+      unlockForm.classList.remove('bad');
+      void unlockForm.offsetWidth;
+      unlockForm.classList.add('bad');
+    }
+  });
+
+  // Ctrl pressed and released on its own (not Ctrl+L, Ctrl+C, Ctrl+scroll...) toggles the cover.
+  let ctrlAlone = false;
+  window.addEventListener('keydown', (e) => { if (e.key === 'Control') { if (!e.repeat) ctrlAlone = true; } else ctrlAlone = false; }, true);
+  window.addEventListener('keyup', (e) => { if (e.key === 'Control' && ctrlAlone) { ctrlAlone = false; toggleCover(); } }, true);
+  window.addEventListener('mousedown', () => { ctrlAlone = false; }, true);
+  window.addEventListener('wheel', () => { ctrlAlone = false; }, true);
+
+  /* =================== accounts =================== */
+  let me = null;
+  let afterSignIn = null;
+
+  async function api(path, body) {
+    const r = await fetch('/jadegate/api/' + path, body === undefined ? { cache: 'no-store' } : {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'Something went wrong.');
+    return data;
+  }
+
+  let mode = 'login';
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+    $('dlgSubmit').textContent = m === 'login' ? 'Sign in' : 'Create account';
+    $('p').autocomplete = m === 'login' ? 'current-password' : 'new-password';
+    $('dlgErr').textContent = '';
+  }
+  document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => setMode(b.dataset.mode));
+  function openAccount(then) { afterSignIn = then || null; setMode('login'); $('dlgErr').textContent = ''; $('acctDlg').showModal(); $('u').focus(); }
+  $('dlgClose').onclick = () => $('acctDlg').close();
+
+  $('acctForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('dlgSubmit');
+    btn.disabled = true;
+    try {
+      await api(mode, { username: $('u').value, password: $('p').value });
+      $('p').value = '';
+      $('acctDlg').close();
+      await loadState();
+      if (afterSignIn) afterSignIn();
+    } catch (err) {
+      $('dlgErr').textContent = err.message;
+    } finally { btn.disabled = false; }
+  });
+
+  $('acctBtn').onclick = (e) => {
+    e.stopPropagation();
+    if (!me) return openAccount();
+    $('menuWho').textContent = me;
+    $('menu').hidden = !$('menu').hidden;
+  };
+  document.addEventListener('click', (e) => { if (!$('menu').contains(e.target)) $('menu').hidden = true; });
+  $('signOut').onclick = async () => { $('menu').hidden = true; await api('logout', {}).catch(() => {}); signedOut(); };
+  $('deleteAcct').onclick = async () => {
+    $('menu').hidden = true;
+    if (!confirm(`Delete the account "${me}" and all of its messages? This can't be undone.`)) return;
+    await api('delete-account', {}).catch(() => {});
+    signedOut();
+  };
+
+  /* =================== messenger =================== */
+  let ROOM = '#caravanserai';
+  let users = new Map();   // name -> online
+  let msgs = [];
+  let active = null;       // ROOM or a username; null = list view
+  const unread = new Map();
+  let events = null;
+
+  async function loadState() {
+    const s = await api('state');
+    me = s.me; ROOM = s.room;
+    users = new Map(s.users.map((u) => [u.name, u.online]));
+    msgs = s.messages;
+    $('acctLabel').textContent = me;
+    connect();
+    renderPanel();
+  }
+
+  function signedOut() {
+    me = null; msgs = []; users = new Map(); unread.clear(); active = null;
+    if (events) { events.close(); events = null; }
+    $('acctLabel').textContent = 'Sign in';
+    renderPanel(); renderUnread();
+  }
+
+  function connect() {
+    if (events) events.close();
+    events = new EventSource('/jadegate/api/events');
+    events.onmessage = (e) => {
+      const ev = JSON.parse(e.data);
+      if (ev.type === 'message') {
+        if (msgs.some((m) => m.id === ev.msg.id)) return;
+        msgs.push(ev.msg);
+        const conv = convOf(ev.msg);
+        const looking = document.body.classList.contains('chat-open') && active === conv;
+        if (ev.msg.from !== me && !looking) unread.set(conv, (unread.get(conv) || 0) + 1);
+      } else if (ev.type === 'presence' || ev.type === 'user') {
+        if (ev.name !== me) users.set(ev.name, ev.online);
+      } else if (ev.type === 'gone') {
+        users.delete(ev.name);
+        msgs = msgs.filter((m) => m.from !== ev.name && m.to !== ev.name);
+        unread.delete(ev.name);
+        if (active === ev.name) active = null;
+      }
+      renderPanel(); renderUnread();
+    };
+    events.onerror = () => {
+      // Session ended (e.g. server restarted and forgot everyone): fall back to signed-out.
+      if (events && events.readyState === EventSource.CLOSED) api('state').catch(() => signedOut());
+    };
+  }
+
+  const convOf = (m) => (m.to === ROOM ? ROOM : m.from === me ? m.to : m.from);
+  const initial = (n) => (n === ROOM ? '✦' : n[0].toUpperCase());
+  const time = (t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function row(name, title, sub) {
+    const b = el('button', 'row');
+    const av = el('div', 'avatar' + (name === ROOM ? ' room' : ''), initial(name));
+    if (name !== ROOM && users.get(name)) av.append(el('span', 'dot'));
+    const t = el('div', 'text');
+    t.append(el('div', 'name', title), el('div', 'sub', sub));
+    b.append(av, t);
+    const n = unread.get(name);
+    if (n) b.append(el('span', 'count', n > 99 ? '99+' : n));
+    b.onclick = () => openConv(name);
+    return b;
+  }
+
+  function renderPanel() {
+    const signedIn = !!me;
+    $('chatSignedOut').hidden = signedIn;
+    $('listView').hidden = !signedIn || active !== null;
+    $('chatView').hidden = !signedIn || active === null;
+    $('chatBack').hidden = !signedIn || active === null;
+    const title = $('chatTitle');
+
+    if (!signedIn || active === null) {
+      title.innerHTML = 'Caravanserai<small>Rest, trade word with fellow travelers</small>';
+      if (signedIn) renderList();
+      return;
+    }
+    title.textContent = active === ROOM ? 'The Caravanserai' : active;
+    title.append(el('small', '', active === ROOM ? 'Public square: every traveler can read'
+      : users.get(active) ? 'Online now' : 'Away'));
+    renderChat();
+  }
+
+  function renderList() {
+    const q = $('filter').value.trim().toLowerCase();
+    const last = new Map();
+    for (const m of msgs) last.set(convOf(m), m);
+
+    const convos = $('convos');
+    convos.replaceChildren();
+    const roomLast = last.get(ROOM);
+    convos.append(row(ROOM, 'The Caravanserai', roomLast ? `${roomLast.from}: ${roomLast.text}` : 'Public square for everyone'));
+    [...last.entries()].filter(([k]) => k !== ROOM && (!q || k.toLowerCase().includes(q)))
+      .sort((a, b) => b[1].at - a[1].at)
+      .forEach(([k, m]) => convos.append(row(k, k, (m.from === me ? 'You: ' : '') + m.text)));
+
+    const trav = $('travelers');
+    trav.replaceChildren();
+    const list = [...users.entries()].filter(([n]) => !last.has(n) && (!q || n.toLowerCase().includes(q)))
+      .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]));
+    if (!list.length) trav.append(el('div', 'empty', q ? 'No traveler by that name.' : 'No other travelers yet.'));
+    list.forEach(([n, online]) => trav.append(row(n, n, online ? 'Online now' : 'Away')));
+  }
+
+  function renderChat() {
+    const box = $('msgs');
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    box.replaceChildren();
+    const list = msgs.filter((m) => convOf(m) === active);
+    if (!list.length) box.append(el('div', 'empty', active === ROOM ? 'The square is quiet. Say something.' : 'No messages yet.'));
+    for (const m of list) {
+      const mine = m.from === me;
+      const wrap = el('div', 'msg' + (mine ? ' mine' : ''));
+      if (active === ROOM && !mine) wrap.append(el('div', 'who', m.from));
+      wrap.append(el('div', 'bubble', m.text), el('time', '', time(m.at)));
+      box.append(wrap);
+    }
+    if (nearBottom || box.dataset.conv !== active) box.scrollTop = box.scrollHeight;
+    box.dataset.conv = active;
+  }
+
+  function openConv(name) {
+    active = name;
+    unread.delete(name);
+    renderPanel(); renderUnread();
+    $('text').focus();
+  }
+
+  function renderUnread() {
+    const total = [...unread.values()].reduce((a, b) => a + b, 0);
+    $('unread').hidden = !total;
+    $('unread').textContent = total > 99 ? '99+' : total;
+  }
+
+  function toggleChat(open) {
+    const on = open ?? !document.body.classList.contains('chat-open');
+    document.body.classList.toggle('chat-open', on);
+    if (on && active) { unread.delete(active); renderUnread(); renderPanel(); }
+  }
+
+  $('chatBtn').onclick = () => toggleChat();
+  $('chatClose').onclick = () => toggleChat(false);
+  $('chatSignIn').onclick = () => openAccount(() => toggleChat(true));
+  $('chatBack').onclick = () => { active = null; renderPanel(); };
+  $('filter').addEventListener('input', renderList);
+
+  const text = $('text');
+  text.addEventListener('input', () => { text.style.height = 'auto'; text.style.height = Math.min(text.scrollHeight, 120) + 'px'; });
+  text.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('composer').requestSubmit(); } });
+  $('composer').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const value = text.value.trim();
+    if (!value || !active) return;
+    try {
+      const { msg } = await api('send', { to: active, text: value });
+      if (!msgs.some((m) => m.id === msg.id)) msgs.push(msg);
+      text.value = ''; text.style.height = 'auto';
+      renderPanel();
+    } catch (err) { alert(err.message); }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (isCovered()) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); addr.focus(); }
+    if (e.key === 'Escape' && document.body.classList.contains('chat-open') && !$('acctDlg').open) toggleChat(false);
+  });
+
+  signedOut(); // messenger connects after the cover is unlocked
+</script>
+</body>
+</html>

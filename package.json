@@ -1,0 +1,13 @@
+{
+  "name": "jadegate",
+  "version": "1.0.0",
+  "description": "JadeGate - a lightweight web proxy that keeps browsing in one tab",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --max-http-header-size=262144 server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,4 @@
+node_modules/
+# Local-only files (start-jadegate.bat holds the cover password)
+start-jadegate.bat
+main.java
