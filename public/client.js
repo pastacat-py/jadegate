@@ -145,6 +145,17 @@
       try { dest = new URL(e.destination.url); } catch { return; }
       if (dest.origin === ORIGIN || (dest.protocol !== 'http:' && dest.protocol !== 'https:')) return;
       e.preventDefault();
+      // Loop guard. Some sites check their own address and, when it isn't theirs, send the page back
+      // to themselves. Through JadeGate that check fails on every load, so the page would reload forever.
+      // Stay put when a script sends us to the page we're already on, or after too many redirects in a row.
+      if (dest.href.split('#')[0] === currentUrl().split('#')[0]) return;
+      let hits = [];
+      try { hits = JSON.parse(sessionStorage.getItem('__jg_redirects') || '[]'); } catch {}
+      const now = Date.now();
+      hits = (Array.isArray(hits) ? hits : []).filter((t) => now - t < 10000);
+      if (hits.length >= 4) return;
+      hits.push(now);
+      try { sessionStorage.setItem('__jg_redirects', JSON.stringify(hits)); } catch {}
       const to = px(dest.href);
       const replace = e.navigationType === 'replace';
       const data = e.formData;
