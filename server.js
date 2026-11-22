@@ -243,19 +243,37 @@ function errorPage(title, msg) {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>JadeGate - ${esc(title)}</title>
-<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1f17;color:#d9f2e6;font-family:system-ui,sans-serif">
-<div style="max-width:520px;padding:24px;text-align:center"><h1 style="color:#3ddc97">${esc(title)}</h1>
-<p>${esc(msg)}</p><p><a href="/" style="color:#3ddc97">Back to JadeGate</a></p></div></body>`;
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px 16px; box-sizing:border-box;
+         background:radial-gradient(ellipse at 50% 40%, #fbf4e2 0%, #f3e7cc 60%, #e8d6ae 100%); color:#2b1d14;
+         font:18px/1.5 "EB Garamond", Georgia, serif; text-align:center; }
+  .card { max-width:480px; }
+  .seal { width:46px; height:46px; }
+  h1 { margin:14px 0 8px; font:700 26px "Cinzel", Georgia, serif; letter-spacing:1px; }
+  p { margin:0 0 22px; color:#5e4a36; overflow-wrap:anywhere; }
+  a, button { display:inline-block; margin:0 4px; padding:9px 18px; border-radius:9px; font:600 16px "EB Garamond", Georgia, serif;
+              text-decoration:none; cursor:pointer; }
+  button { border:0; background:#b23a26; color:#f3e7cc; }
+  a { border:1px solid #c8963e; color:#2b1d14; }
+</style>
+<div class="card">
+  <svg class="seal" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="5" fill="#b23a26"/><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#f3e7cc" stroke-width="1.5"/><path d="M10 10h12M10 16h12M10 22h12M16 10v12" stroke="#f3e7cc" stroke-width="2.2" stroke-linecap="round"/><circle cx="20.5" cy="19" r="1.3" fill="#f3e7cc"/></svg>
+  <h1>${esc(title)}</h1>
+  <p>${esc(msg)}</p>
+  <button onclick="location.reload()">Try again</button>
+  <a href="/jadegate/start">Go to start page</a>
+</div>`;
 }
 
 // ---------- the proxy itself ----------
 
 async function proxy(req, res, target) {
   if (target.protocol !== 'http:' && target.protocol !== 'https:') {
-    return send(res, 400, errorPage('Unsupported link', 'Only http and https sites can be opened.'));
+    return send(res, 400, errorPage("Can't open this link", 'JadeGate only opens http and https websites.'));
   }
   if (await isBlockedHost(target.hostname)) {
-    return send(res, 403, errorPage('Blocked', 'JadeGate will not open local or private network addresses.'));
+    return send(res, 403, errorPage("Can't open that address", "JadeGate doesn't open local or private network addresses."));
   }
 
   const headers = {};
@@ -280,7 +298,7 @@ async function proxy(req, res, target) {
       redirect: 'manual',
     });
   } catch (err) {
-    return send(res, 502, errorPage('Could not reach site', `${target.host}: ${err.cause?.code || err.message}`));
+    return send(res, 502, errorPage("Couldn't load this site", `${target.host} didn't respond. It may be down, or it may be blocking JadeGate. (${err.cause?.code || err.message})`));
   }
 
   const out = {};
@@ -378,7 +396,7 @@ async function handle(req, res) {
       // A relative link that slipped through (e.g. /p/image.png): resolve it against the page that asked.
       const ctx = contextUrl(req);
       try { target = ctx && new URL(url.pathname.slice(3) + url.search, ctx); } catch {}
-      if (!target) return send(res, 400, errorPage('Bad link', 'JadeGate could not work out where this link goes.'));
+      if (!target) return send(res, 400, errorPage('Broken link', "JadeGate couldn't figure out where this link goes."));
     }
     res.writeHead(307, { location: proxyPath(target) });
     return res.end();
@@ -390,13 +408,13 @@ async function handle(req, res) {
     res.writeHead(307, { location: px(new URL(req.url, ctx).href) });
     return res.end();
   }
-  send(res, 404, errorPage('Not found', 'That page does not exist on JadeGate.'));
+  send(res, 404, errorPage('Page not found', "There's nothing at this address."));
 }
 
 http.createServer((req, res) => {
   handle(req, res).catch((err) => {
     console.error(err);
-    if (!res.headersSent) send(res, 500, errorPage('JadeGate error', err.message));
+    if (!res.headersSent) send(res, 500, errorPage('Something went wrong', `JadeGate hit an error: ${err.message}`));
     else res.destroy();
   });
 }).on('error', (err) => {

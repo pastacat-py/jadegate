@@ -168,10 +168,10 @@
     <svg class="seal" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="5" fill="#b23a26"/><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#f3e7cc" stroke-width="1.5"/><path d="M10 10h12M10 16h12M10 22h12M16 10v12" stroke="#f3e7cc" stroke-width="2.2" stroke-linecap="round"/><circle cx="20.5" cy="19" r="1.3" fill="#f3e7cc"/></svg>
     <h1>JADEGATE</h1>
     <div class="rule">✦</div>
-    <p>Speak the password to pass the gate</p>
+    <p>Enter the password to continue</p>
     <form id="unlock" autocomplete="off">
       <input id="pw" type="password" placeholder="Password" aria-label="Password" autofocus>
-      <button type="submit">Enter</button>
+      <button type="submit">Unlock</button>
     </form>
     <div id="gateErr"></div>
   </div>
@@ -189,7 +189,7 @@
     <form id="nav" autocomplete="off">
       <input id="addr" placeholder="Search the web or enter an address" spellcheck="false">
     </form>
-    <button class="btn" id="chatBtn" title="Caravanserai messenger">
+    <button class="btn" id="chatBtn" title="Messages">
       <svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></svg>
       <span class="label">Messages</span><span class="badge" id="unread" hidden></span>
     </button>
@@ -216,20 +216,20 @@
     <aside class="panel" id="panel" aria-label="Messenger">
       <header>
         <button class="icon-btn" id="chatBack" title="All conversations" hidden><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <h2 id="chatTitle">Caravanserai<small>Rest, trade word with fellow travelers</small></h2>
+        <h2 id="chatTitle">Messages<small>Chat with other people on JadeGate</small></h2>
         <button class="icon-btn" id="chatClose" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </header>
 
       <div class="signin-cta" id="chatSignedOut">
-        Sign the ledger to send messages to other travelers.<br>
+        Sign in to chat with other people on JadeGate.<br>
         <button class="primary" id="chatSignIn">Sign in</button>
       </div>
 
       <div class="scroll" id="listView" hidden>
-        <input class="filter" id="filter" placeholder="Find a traveler by name" autocomplete="off">
+        <input class="filter" id="filter" placeholder="Search people" autocomplete="off">
         <div class="section">Conversations</div>
         <div id="convos"></div>
-        <div class="section">Travelers</div>
+        <div class="section">People</div>
         <div id="travelers"></div>
       </div>
 
@@ -246,8 +246,8 @@
   <dialog id="acctDlg">
     <form class="dlg" id="acctForm" method="dialog" autocomplete="off">
       <button type="button" class="icon-btn close-x" id="dlgClose" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-      <h3>The Ledger</h3>
-      <p class="lede">Enter the gate as a traveler</p>
+      <h3>Your account</h3>
+      <p class="lede">Just a username and password. No email needed.</p>
       <div class="tabs">
         <button type="button" data-mode="login" class="on">Sign in</button>
         <button type="button" data-mode="register">Create account</button>
@@ -258,7 +258,7 @@
       <input id="p" name="password" type="password" maxlength="200" required>
       <button class="primary" type="submit" id="dlgSubmit">Sign in</button>
       <div class="err" id="dlgErr"></div>
-      <p class="privacy">Nothing is saved. Accounts and messages live only in the server's memory: never written to disk, never logged. Everything vanishes when the server restarts, and messages fade after 24 hours.</p>
+      <p class="privacy">We don't keep anything. Your account and messages only live in the server's memory, so nothing is written to disk or logged. Everything is wiped when the server restarts, and messages disappear after 24 hours.</p>
     </form>
   </dialog>
 
@@ -340,7 +340,7 @@
       pw.blur();
       startBrowsing();
     } else {
-      $('gateErr').textContent = r ? 'The gatekeeper does not know that word.' : 'Could not reach JadeGate. Try again.';
+      $('gateErr').textContent = r ? "That's not the right password." : "Couldn't connect. Check your internet and try again.";
       unlockForm.classList.remove('bad');
       void unlockForm.offsetWidth;
       unlockForm.classList.add('bad');
@@ -357,7 +357,7 @@
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || 'Something went wrong.');
+    if (!r.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
     return data;
   }
 
@@ -398,7 +398,7 @@
   $('signOut').onclick = async () => { $('menu').hidden = true; await api('logout', {}).catch(() => {}); signedOut(); };
   $('deleteAcct').onclick = async () => {
     $('menu').hidden = true;
-    if (!confirm(`Delete the account "${me}" and all of its messages? This can't be undone.`)) return;
+    if (!confirm(`Delete your account (${me}) and all your messages? This can't be undone.`)) return;
     await api('delete-account', {}).catch(() => {});
     signedOut();
   };
@@ -483,13 +483,13 @@
     const title = $('chatTitle');
 
     if (!signedIn || active === null) {
-      title.innerHTML = 'Caravanserai<small>Rest, trade word with fellow travelers</small>';
+      title.innerHTML = 'Messages<small>Chat with other people on JadeGate</small>';
       if (signedIn) renderList();
       return;
     }
-    title.textContent = active === ROOM ? 'The Caravanserai' : active;
-    title.append(el('small', '', active === ROOM ? 'Public square: every traveler can read'
-      : users.get(active) ? 'Online now' : 'Away'));
+    title.textContent = active === ROOM ? 'Public chat' : active;
+    title.append(el('small', '', active === ROOM ? 'Everyone can see messages here'
+      : users.get(active) ? 'Online' : 'Offline'));
     renderChat();
   }
 
@@ -501,7 +501,7 @@
     const convos = $('convos');
     convos.replaceChildren();
     const roomLast = last.get(ROOM);
-    convos.append(row(ROOM, 'The Caravanserai', roomLast ? `${roomLast.from}: ${roomLast.text}` : 'Public square for everyone'));
+    convos.append(row(ROOM, 'Public chat', roomLast ? `${roomLast.from}: ${roomLast.text}` : 'Chat with everyone'));
     [...last.entries()].filter(([k]) => k !== ROOM && (!q || k.toLowerCase().includes(q)))
       .sort((a, b) => b[1].at - a[1].at)
       .forEach(([k, m]) => convos.append(row(k, k, (m.from === me ? 'You: ' : '') + m.text)));
@@ -510,8 +510,8 @@
     trav.replaceChildren();
     const list = [...users.entries()].filter(([n]) => !last.has(n) && (!q || n.toLowerCase().includes(q)))
       .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]));
-    if (!list.length) trav.append(el('div', 'empty', q ? 'No traveler by that name.' : 'No other travelers yet.'));
-    list.forEach(([n, online]) => trav.append(row(n, n, online ? 'Online now' : 'Away')));
+    if (!list.length) trav.append(el('div', 'empty', q ? 'Nobody with that name.' : 'Nobody else has signed up yet.'));
+    list.forEach(([n, online]) => trav.append(row(n, n, online ? 'Online' : 'Offline')));
   }
 
   function renderChat() {
@@ -519,7 +519,7 @@
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
     box.replaceChildren();
     const list = msgs.filter((m) => convOf(m) === active);
-    if (!list.length) box.append(el('div', 'empty', active === ROOM ? 'The square is quiet. Say something.' : 'No messages yet.'));
+    if (!list.length) box.append(el('div', 'empty', active === ROOM ? 'No messages yet. Say hi!' : 'No messages yet. Say hi!'));
     for (const m of list) {
       const mine = m.from === me;
       const wrap = el('div', 'msg' + (mine ? ' mine' : ''));

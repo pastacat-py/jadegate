@@ -90,16 +90,16 @@ async function handle(req, res, url) {
     const name = String(body?.username || '').trim();
     const password = String(body?.password || '');
     if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) {
-      return json(res, 400, { error: 'Usernames are 3-20 letters, numbers or underscores.' });
+      return json(res, 400, { error: 'Pick a username with 3 to 20 letters, numbers or underscores.' });
     }
     if (password.length < 6 || password.length > 200) {
-      return json(res, 400, { error: 'Passwords must be at least 6 characters.' });
+      return json(res, 400, { error: 'Your password needs at least 6 characters.' });
     }
     const k = key(name);
 
     if (route === 'register') {
-      if (users.has(k)) return json(res, 409, { error: 'That name is already taken.' });
-      if (users.size >= MAX_USERS) return json(res, 503, { error: 'The caravan is full. Try again later.' });
+      if (users.has(k)) return json(res, 409, { error: 'Someone already has that username.' });
+      if (users.size >= MAX_USERS) return json(res, 503, { error: 'Too many accounts right now. Try again later.' });
       const salt = crypto.randomBytes(16).toString('hex');
       users.set(k, { name, salt, hash: await hashPassword(password, salt) });
       pushAll({ type: 'user', name, online: false });
@@ -121,7 +121,7 @@ async function handle(req, res, url) {
     return json(res, 200, { ok: true }, { 'set-cookie': clearCookie });
   }
 
-  if (!me) return json(res, 401, { error: 'Sign in first.' });
+  if (!me) return json(res, 401, { error: 'Please sign in first.' });
 
   if (req.method === 'POST' && route === 'delete-account') {
     users.delete(me.key);
@@ -147,13 +147,13 @@ async function handle(req, res, url) {
     const body = await readJson(req);
     const text = String(body?.text || '').trim();
     const to = String(body?.to || '');
-    if (!text || text.length > 1000) return json(res, 400, { error: 'Messages must be 1-1000 characters.' });
+    if (!text || text.length > 1000) return json(res, 400, { error: 'Messages can be up to 1000 characters.' });
     const target = to === ROOM ? null : users.get(key(to));
-    if (to !== ROOM && !target) return json(res, 404, { error: 'No traveler by that name.' });
+    if (to !== ROOM && !target) return json(res, 404, { error: "There's nobody with that username." });
 
     const now = Date.now();
     const recent = (sendLog.get(me.key) || []).filter((t) => now - t < 10000);
-    if (recent.length >= 8) return json(res, 429, { error: 'Slow down a little.' });
+    if (recent.length >= 8) return json(res, 429, { error: "You're sending messages too fast. Wait a few seconds." });
     recent.push(now);
     sendLog.set(me.key, recent);
 
