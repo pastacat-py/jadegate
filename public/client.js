@@ -134,6 +134,38 @@
     };
   };
 
+  // --- script navigations: location.href = ..., location.assign/replace, form.submit(), a.click() ---
+  // These skip the link and form fixes above. Left alone, the frame would load the real site directly,
+  // and most sites refuse to be shown inside a frame ("refused to connect"). Catch them and send them
+  // through JadeGate instead. (Navigation API: Chrome, Edge, Brave and other Chromium browsers.)
+  if (window.navigation && typeof navigation.addEventListener === 'function') {
+    navigation.addEventListener('navigate', (e) => {
+      if (e.navigationType === 'traverse' || !e.cancelable || e.hashChange || e.downloadRequest != null) return;
+      let dest;
+      try { dest = new URL(e.destination.url); } catch { return; }
+      if (dest.origin === ORIGIN || (dest.protocol !== 'http:' && dest.protocol !== 'https:')) return;
+      e.preventDefault();
+      const to = px(dest.href);
+      const replace = e.navigationType === 'replace';
+      const data = e.formData;
+      setTimeout(() => {
+        if (!data) return replace ? location.replace(to) : location.assign(to);
+        // A form posted straight to the real site: post the same fields through JadeGate.
+        const f = document.createElement('form');
+        f.method = 'post'; f.action = to; f.enctype = 'multipart/form-data'; f.style.display = 'none';
+        for (const [k, v] of data) {
+          const i = document.createElement('input');
+          i.name = k;
+          if (typeof v === 'string') { i.type = 'hidden'; i.value = v; }
+          else { i.type = 'file'; const dt = new DataTransfer(); dt.items.add(v); i.files = dt.files; }
+          f.appendChild(i);
+        }
+        document.documentElement.appendChild(f);
+        HTMLFormElement.prototype.submit.call(f);
+      }, 0);
+    });
+  }
+
   // --- network calls made by page scripts ---
   const nativeFetch = window.fetch;
   window.fetch = function (input, init) {

@@ -57,6 +57,8 @@ and the host may suspend your account.
 ## Limits
 
 - Very heavy, script-driven sites (YouTube, Discord, Google sign-in) may only partly work.
-  WebSockets and `location.assign()` to external URLs are not proxied.
+  WebSockets are not proxied. Script navigations (`location.href = ...`, `location.assign()`) are
+  caught in Chrome, Edge and Brave. In Firefox and Safari they can still leave JadeGate and show
+  "refused to connect".
 - Search engines sometimes block requests that come from servers (HTTP 429 or a captcha).
   If a search engine blocks you, set `JADEGATE_SEARCH` to another engine.
