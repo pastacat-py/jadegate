@@ -119,14 +119,5 @@
     </svg>
   </div>
 
-  <script>
-    // Ctrl pressed on its own here: tell JadeGate to toggle its grey cover.
-    let ctrlAlone = false;
-    addEventListener('keydown', (e) => { if (e.key === 'Control') { if (!e.repeat) ctrlAlone = true; } else ctrlAlone = false; }, true);
-    addEventListener('keyup', (e) => {
-      if (e.key === 'Control' && ctrlAlone) { ctrlAlone = false; window.parent.postMessage({ jadegate: 'ctrl' }, location.origin); }
-    }, true);
-    addEventListener('mousedown', () => { ctrlAlone = false; }, true);
-  </script>
 </body>
 </html>

@@ -17,17 +17,6 @@
   let shell = null;
   try { if (window.parent.__JG_SHELL) shell = window.parent; } catch {}
 
-  // Ctrl pressed on its own while this site has focus: tell JadeGate to toggle its grey cover.
-  let topShell = null;
-  try { if (window.top.__JG_SHELL) topShell = window.top; } catch {}
-  let ctrlAlone = false;
-  addEventListener('keydown', (e) => { if (e.key === 'Control') { if (!e.repeat) ctrlAlone = true; } else ctrlAlone = false; }, true);
-  addEventListener('keyup', (e) => {
-    if (e.key === 'Control' && ctrlAlone) { ctrlAlone = false; if (topShell) topShell.postMessage({ jadegate: 'ctrl' }, ORIGIN); }
-  }, true);
-  addEventListener('mousedown', () => { ctrlAlone = false; }, true);
-  addEventListener('wheel', () => { ctrlAlone = false; }, true);
-
   function px(u) {
     if (u == null) return u;
     u = String(u).trim();

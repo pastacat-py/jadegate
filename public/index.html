@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JadeGate</title>
+<script>window.__JG_LOCKED = true;</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='5' fill='%23b23a26'/><rect x='5' y='5' width='22' height='22' rx='3' fill='none' stroke='%23f3e7cc' stroke-width='1.5'/><path d='M10 10h12M10 16h12M10 22h12M16 10v12' stroke='%23f3e7cc' stroke-width='2.2' stroke-linecap='round'/><circle cx='20.5' cy='19' r='1.3' fill='%23f3e7cc'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,12 +133,29 @@
   .menu button:hover { background:var(--parchment-2); }
   .menu button.danger { color:var(--vermilion); }
 
-  /* ---------- grey cover screen ---------- */
-  #cover { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; background:#808080; }
-  #unlock input { width:220px; height:34px; padding:0 12px; border:1px solid #707070; border-radius:6px;
-                  background:#8a8a8a; color:#1e1e1e; font:15px system-ui, sans-serif; outline:0; }
-  #unlock input::placeholder { color:#555; }
+  /* ---------- password screen ---------- */
+  #gate { position:fixed; inset:0; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center;
+          padding:24px 16px; text-align:center; color:var(--ink);
+          background:
+            radial-gradient(ellipse at 50% 40%, rgba(255,250,235,.85) 0%, rgba(255,250,235,0) 60%),
+            radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120,80,30,.28) 100%),
+            repeating-linear-gradient(17deg, rgba(150,110,50,.035) 0 2px, transparent 2px 7px),
+            var(--parchment); }
+  #gate .seal { width:58px; height:58px; filter:drop-shadow(0 2px 3px rgba(80,40,10,.3)); }
+  #gate h1 { margin:14px 0 0; font:700 clamp(32px, 6vw, 46px)/1 var(--display); letter-spacing:4px; }
+  #gate .rule { display:flex; align-items:center; gap:12px; width:min(300px, 75vw); margin:10px 0 4px; color:var(--gold); }
+  #gate .rule::before, #gate .rule::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  #gate p { margin:0 0 22px; font:italic 18px var(--body); color:var(--muted); }
+  #unlock { width:100%; max-width:380px; display:flex; gap:8px; padding:6px; border-radius:12px; background:#fbf4e2;
+            border:2px solid var(--gold); box-shadow:0 0 0 4px var(--parchment), 0 0 0 5px var(--parchment-3), 0 12px 30px rgba(90,55,15,.18); }
+  #unlock input { flex:1; min-width:0; height:40px; padding:0 12px; border:0; background:transparent; color:var(--ink);
+                  font:18px var(--body); outline:0; }
+  #unlock input::placeholder { color:var(--muted); font-style:italic; }
+  #unlock button { border:0; border-radius:8px; padding:0 18px; background:var(--vermilion); color:var(--parchment);
+                   font:700 13px var(--display); letter-spacing:1.5px; cursor:pointer; }
+  #unlock button:hover { filter:brightness(1.1); }
   #unlock.bad { animation:shake .3s; }
+  #gateErr { min-height:22px; margin-top:12px; color:var(--vermilion); font-size:16px; }
   @keyframes shake { 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
 
   [hidden] { display:none !important; }
@@ -145,12 +163,19 @@
 </style>
 </head>
 <body>
-  <!-- Grey cover with a password box. Once unlocked, pressing Ctrl alone brings the cover back. -->
-  <div id="cover">
+  <!-- Password screen. The server marks the page unlocked once you've entered the password this browser session. -->
+  <div id="gate">
+    <svg class="seal" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="5" fill="#b23a26"/><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#f3e7cc" stroke-width="1.5"/><path d="M10 10h12M10 16h12M10 22h12M16 10v12" stroke="#f3e7cc" stroke-width="2.2" stroke-linecap="round"/><circle cx="20.5" cy="19" r="1.3" fill="#f3e7cc"/></svg>
+    <h1>JADEGATE</h1>
+    <div class="rule">✦</div>
+    <p>Speak the password to pass the gate</p>
     <form id="unlock" autocomplete="off">
       <input id="pw" type="password" placeholder="Password" aria-label="Password" autofocus>
+      <button type="submit">Enter</button>
     </form>
+    <div id="gateErr"></div>
   </div>
+  <script>if (!window.__JG_LOCKED) document.getElementById('gate').hidden = true;</script>
 
   <div class="bar">
     <div class="brand">
@@ -282,7 +307,6 @@
     if (e.origin !== location.origin || !e.data || e.data.jadegate == null) return;
     if (e.data.jadegate === 'nav') show(e.data.url);
     if (e.data.jadegate === 'loading') loading(true);
-    if (e.data.jadegate === 'ctrl') toggleCover(); // Ctrl pressed while a site had focus
   });
   $('nav').addEventListener('submit', (e) => { e.preventDefault(); go(addr.value); addr.blur(); });
   addr.addEventListener('focus', () => addr.select());
@@ -291,37 +315,19 @@
   $('reload').onclick = () => { try { view.contentWindow.location.reload(); } catch { view.src = view.src; } loading(true); };
   $('home').onclick = () => { store.set(''); go(''); };
 
-  // Nothing loads until the cover is unlocked the first time.
+  // Nothing loads until the password has been entered.
   const params = new URLSearchParams(location.search);
   const first = params.get('url') || store.get();
   if (location.search) history.replaceState(null, '', '/');
   function startBrowsing() {
     go(first || '');
     if (first) addr.value = first;
+    loadState().catch(() => signedOut());
   }
 
-  /* =================== grey cover screen =================== */
-  const cover = $('cover'), unlockForm = $('unlock'), pw = $('pw');
-  let started = false;
-  const isCovered = () => !cover.hidden;
-
-  function coverUp() {
-    cover.hidden = false;
-    pw.value = '';
-    $('menu').hidden = true;
-    if ($('acctDlg').open) $('acctDlg').close();
-    try { view.contentDocument.querySelectorAll('video, audio').forEach((m) => m.pause()); } catch {}
-    if (document.activeElement) document.activeElement.blur(); // pull keyboard focus out of the site
-    window.focus();
-    pw.focus();
-  }
-
-  // Ctrl alone: cover JadeGate. (While covered, it just puts the cursor back in the password box.)
-  function toggleCover() {
-    if (!isCovered()) return coverUp();
-    pw.focus();
-  }
-  pw.focus();
+  /* =================== password screen =================== */
+  const gate = $('gate'), unlockForm = $('unlock'), pw = $('pw');
+  const isLocked = () => !gate.hidden;
 
   unlockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -330,22 +336,17 @@
     }).catch(() => null);
     pw.value = '';
     if (r && r.ok) {
-      cover.hidden = true;
+      gate.hidden = true;
       pw.blur();
-      if (!started) { started = true; startBrowsing(); loadState().catch(() => signedOut()); }
+      startBrowsing();
     } else {
+      $('gateErr').textContent = r ? 'The gatekeeper does not know that word.' : 'Could not reach JadeGate. Try again.';
       unlockForm.classList.remove('bad');
       void unlockForm.offsetWidth;
       unlockForm.classList.add('bad');
+      pw.focus();
     }
   });
-
-  // Ctrl pressed and released on its own (not Ctrl+L, Ctrl+C, Ctrl+scroll...) toggles the cover.
-  let ctrlAlone = false;
-  window.addEventListener('keydown', (e) => { if (e.key === 'Control') { if (!e.repeat) ctrlAlone = true; } else ctrlAlone = false; }, true);
-  window.addEventListener('keyup', (e) => { if (e.key === 'Control' && ctrlAlone) { ctrlAlone = false; toggleCover(); } }, true);
-  window.addEventListener('mousedown', () => { ctrlAlone = false; }, true);
-  window.addEventListener('wheel', () => { ctrlAlone = false; }, true);
 
   /* =================== accounts =================== */
   let me = null;
@@ -571,12 +572,13 @@
   });
 
   window.addEventListener('keydown', (e) => {
-    if (isCovered()) return;
+    if (isLocked()) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); addr.focus(); }
     if (e.key === 'Escape' && document.body.classList.contains('chat-open') && !$('acctDlg').open) toggleChat(false);
   });
 
-  signedOut(); // messenger connects after the cover is unlocked
+  signedOut(); // messenger connects once the password has been entered
+  if (isLocked()) pw.focus(); else startBrowsing();
 </script>
 </body>
 </html>

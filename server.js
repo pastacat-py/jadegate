@@ -23,7 +23,7 @@ if (http.maxHeaderSize < 262144 && !process.env.JADEGATE_CHILD) {
 }
 
 const PORT = process.env.PORT || 8080;
-// Password for the grey cover screen. Kept out of the code (the repo is public): set JADEGATE_PASSWORD.
+// JadeGate's password. Kept out of the code (the repo is public): set JADEGATE_PASSWORD.
 const PASSWORD = process.env.JADEGATE_PASSWORD || crypto.randomBytes(6).toString('hex');
 // Search engines, tried in order. Engines sometimes refuse requests from servers (HTTP 202/403/429);
 // when that happens JadeGate retries the same search on the next one.
@@ -40,7 +40,9 @@ const AUTH_TOKEN = crypto.createHash('sha256').update('jg:' + PASSWORD).digest('
 
 const PUBLIC = path.join(__dirname, 'public');
 const SHELL_HTML = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8'); // toolbar + frame
-const START_HTML = fs.readFileSync(path.join(PUBLIC, 'start.html'), 'utf8'); // search page shown in the frame
+// Same page, told it's already unlocked (sent once the password has been entered this browser session).
+const SHELL_UNLOCKED = SHELL_HTML.replace('window.__JG_LOCKED = true;', 'window.__JG_LOCKED = false;');
+const START_HTML =fs.readFileSync(path.join(PUBLIC, 'start.html'), 'utf8'); // search page shown in the frame
 const CLIENT_JS = fs.readFileSync(path.join(PUBLIC, 'client.js'), 'utf8');
 
 // ---------- URL helpers ----------
@@ -334,7 +336,7 @@ function toTarget(query) {
 async function handle(req, res) {
   const url = new URL(req.url, 'http://jadegate.local');
 
-  // Password check for the grey cover screen (the page itself never knows the password).
+  // Password check (the page itself never knows the password).
   if (url.pathname === '/jadegate/unlock' && req.method === 'POST') {
     let pw = '';
     try { pw = String(JSON.parse((await readBody(req)).toString()).password || ''); } catch {}
@@ -347,7 +349,7 @@ async function handle(req, res) {
     return send(res, 200, '{"ok":true}', 'application/json',
       { 'set-cookie': `jg_auth=${AUTH_TOKEN}; Path=/; HttpOnly; SameSite=Lax` });
   }
-  // Until unlocked, the only thing anyone can load is the grey page.
+  // Until the password is entered, the only thing anyone can load is the password screen.
   if (parseCookies(req.headers.cookie).jg_auth !== AUTH_TOKEN) {
     if (url.pathname === '/') return send(res, 200, SHELL_HTML);
     return send(res, 401, 'Locked', 'text/plain; charset=utf-8');
@@ -357,7 +359,7 @@ async function handle(req, res) {
 
   // "/" opened inside the JadeGate window is a site's own home page (e.g. YouTube's "/"), not ours.
   const inFrame = req.headers['sec-fetch-dest'] === 'iframe';
-  if (url.pathname === '/' && !(inFrame && contextUrl(req))) return send(res, 200, SHELL_HTML);
+  if (url.pathname === '/' && !(inFrame && contextUrl(req))) return send(res, 200, SHELL_UNLOCKED);
   if (url.pathname === '/jadegate/start') return send(res, 200, START_HTML);
   if (url.pathname === '/jadegate/client.js') {
     return send(res, 200, CLIENT_JS, 'application/javascript; charset=utf-8', { 'cache-control': 'no-cache' });
